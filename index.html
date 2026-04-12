@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スリルカート試作1号</title>
+<style>
+body {
+  margin:0;
+  background:#111;
+  color:#fff;
+  font-family:sans-serif;
+  overflow:hidden;
+}
+#game {
+  position:relative;
+  width:100vw;
+  height:100vh;
+  background:#222;
+}
+.lane {
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:20%;
+  border-left:1px solid rgba(255,255,255,0.1);
+}
+.player {
+  position:absolute;
+  bottom:10%;
+  width:18%;
+  height:60px;
+  background:#0f0;
+  text-align:center;
+  line-height:60px;
+}
+.item {
+  position:absolute;
+  width:18%;
+  height:40px;
+  text-align:center;
+  line-height:40px;
+}
+#ui {
+  position:absolute;
+  top:10px;
+  left:10px;
+}
+button {
+  position:absolute;
+  bottom:20px;
+  width:80px;
+  height:80px;
+  opacity:0.5;
+  font-size:24px;
+}
+#left { left:20px; }
+#right { right:20px; }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="ui">
+    <div>スコア: <span id="score">0</span></div>
+    <div>時間: <span id="time">60</span></div>
+  </div>
+  <div id="player" class="player">🛒</div>
+</div>
+
+<button id="left">←</button>
+<button id="right">→</button>
+
+<script>
+const player = document.getElementById("player");
+const game = document.getElementById("game");
+const scoreEl = document.getElementById("score");
+const timeEl = document.getElementById("time");
+
+let lane = 2;
+let score = 0;
+let time = 60;
+
+function updatePlayer() {
+  player.style.left = (lane * 20 + 1) + "%";
+}
+updatePlayer();
+
+document.getElementById("left").onclick = () => {
+  if(lane > 0) lane--;
+  updatePlayer();
+};
+document.getElementById("right").onclick = () => {
+  if(lane < 4) lane++;
+  updatePlayer();
+};
+
+function spawnItem() {
+  const item = document.createElement("div");
+  item.className = "item";
+  const type = Math.random();
+
+  let points = 0;
+  let text = "";
+
+  if(type < 0.6) { text="🥕"; points=500; }
+  else if(type < 0.85) { text="🐟"; points=1000; }
+  else { text="🥩"; points=3000; }
+
+  item.innerText = text;
+  let itemLane = Math.floor(Math.random()*5);
+  item.style.left = (itemLane*20+1)+"%";
+  item.style.top = "0px";
+
+  game.appendChild(item);
+
+  let fall = setInterval(() => {
+    let y = parseInt(item.style.top);
+    item.style.top = (y+5)+"px";
+
+    if(y > window.innerHeight*0.8) {
+      if(itemLane === lane) {
+        score += points;
+        scoreEl.innerText = score;
+      }
+      item.remove();
+      clearInterval(fall);
+    }
+
+    if(y > window.innerHeight) {
+      item.remove();
+      clearInterval(fall);
+    }
+  }, 30);
+}
+
+setInterval(spawnItem, 800);
+
+setInterval(() => {
+  time--;
+  timeEl.innerText = time;
+
+  if(time <= 0) {
+    alert("買い物終了ッ！！ スコア: " + score);
+    location.reload();
+  }
+}, 1000);
+</script>
+
+</body>
+</html>
