@@ -6,16 +6,15 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
   />
-  <title>スリルカート 試作1号改</title>
+  <title>スリルカート 試作2号</title>
   <style>
     :root {
-      --bg: #1c1c1c;
-      --panel: rgba(255, 255, 255, 0.12);
-      --text: #ffffff;
-      --btn-bg: rgba(230, 230, 230, 0.78);
-      --btn-active: rgba(255, 255, 255, 0.92);
-      --accel-bg: #39e04d;
-      --danger: #ffcc00;
+      --bg: #1a1a1a;
+      --text: #fff;
+      --lane-line: rgba(255,255,255,0.05);
+      --btn-bg: rgba(230,230,230,0.82);
+      --btn-active: rgba(255,255,255,0.95);
+      --accel-bg: #32e04d;
     }
 
     * {
@@ -29,13 +28,10 @@
       height: 100%;
       overflow: hidden;
       background: #111;
+      color: var(--text);
       font-family: sans-serif;
       touch-action: manipulation;
       user-select: none;
-    }
-
-    body {
-      color: var(--text);
     }
 
     #game {
@@ -43,116 +39,233 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background:
-        linear-gradient(to bottom, #262626 0%, #1f1f1f 100%);
+      background: linear-gradient(to bottom, #2c2c2c 0%, #181818 100%);
     }
 
-    /* 奥行きの雰囲気だけ先に */
-    #road {
+    /* ===== 背景 ===== */
+    #scene {
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,0.02) 0px,
-          rgba(255,255,255,0.02) 18px,
-          rgba(0,0,0,0.00) 18px,
-          rgba(0,0,0,0.00) 36px
-        );
+      overflow: hidden;
+      z-index: 1;
     }
 
+    .shelf {
+      position: absolute;
+      top: 12%;
+      bottom: 0;
+      width: 26%;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.18)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.04) 0px,
+          rgba(255,255,255,0.04) 4px,
+          rgba(0,0,0,0.0) 4px,
+          rgba(0,0,0,0.0) 70px
+        ),
+        linear-gradient(to right, #405070, #263247);
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    #leftShelf {
+      left: 0;
+      transform-origin: left center;
+      clip-path: polygon(0 0, 100% 0, 86% 100%, 0 100%);
+    }
+
+    #rightShelf {
+      right: 0;
+      transform-origin: right center;
+      clip-path: polygon(14% 0, 100% 0, 100% 100%, 0 100%);
+    }
+
+    .shelf-products {
+      position: absolute;
+      inset: 0;
+      padding: 10px 10px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .row {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      align-items: end;
+      height: 58px;
+    }
+
+    .prod {
+      width: 16%;
+      border-radius: 4px;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.18);
+    }
+
+    .p1 { height: 34px; background: #f4d35e; }
+    .p2 { height: 44px; background: #ee964b; }
+    .p3 { height: 38px; background: #f95738; }
+    .p4 { height: 46px; background: #7bd389; }
+    .p5 { height: 40px; background: #6ca0dc; }
+    .p6 { height: 48px; background: #c97bff; }
+
+    #road {
+      position: absolute;
+      left: 24%;
+      right: 24%;
+      top: 0;
+      bottom: 0;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0.00)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.03) 0px,
+          rgba(255,255,255,0.03) 34px,
+          rgba(0,0,0,0.0) 34px,
+          rgba(0,0,0,0.0) 68px
+        ),
+        linear-gradient(to bottom, #3a3a3a, #222);
+      clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%);
+    }
+
+    #ceiling {
+      position: absolute;
+      left: 18%;
+      right: 18%;
+      top: 0;
+      height: 18%;
+      background:
+        repeating-linear-gradient(
+          to right,
+          rgba(255,255,255,0.05) 0px,
+          rgba(255,255,255,0.05) 2px,
+          rgba(0,0,0,0) 2px,
+          rgba(0,0,0,0) 58px
+        ),
+        linear-gradient(to bottom, #b8b3a8, #8f8a7f);
+      clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+      opacity: 0.6;
+    }
+
+    .sign {
+      position: absolute;
+      top: 12%;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      z-index: 2;
+    }
+
+    .sign.red { background: #c84b3a; }
+    .sign.green { background: #598b46; }
+    .sign.blue { background: #506da6; }
+
+    #sign1 { left: 28%; top: 10%; }
+    #sign2 { right: 28%; top: 10%; }
+    #sign3 { left: 31%; top: 16%; }
+    #sign4 { right: 31%; top: 16%; }
+
+    /* ===== UI ===== */
     #ui {
       position: absolute;
-      top: env(safe-area-inset-top, 10px);
+      top: max(10px, env(safe-area-inset-top));
       left: 10px;
       right: 10px;
-      z-index: 30;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      z-index: 40;
       pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
 
-    .ui-block {
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 12px;
-      padding: 8px 12px;
-      min-width: 120px;
+    .ui-box {
+      background: rgba(0,0,0,0.28);
+      border-radius: 18px;
+      padding: 12px 16px;
+      min-width: 150px;
+      backdrop-filter: blur(4px);
     }
 
-    .ui-label {
-      font-size: 14px;
-      opacity: 0.85;
+    .ui-title {
+      font-size: 16px;
+      opacity: 0.9;
       margin-bottom: 2px;
     }
 
-    .ui-value {
-      font-size: 28px;
-      font-weight: bold;
+    .ui-main {
+      font-size: 30px;
+      font-weight: 900;
       line-height: 1;
     }
 
     #timeBarWrap {
-      width: 180px;
+      margin-top: 8px;
+      width: 220px;
       height: 18px;
-      margin-top: 6px;
-      background: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.16);
       border-radius: 999px;
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.12);
     }
 
     #timeBar {
-      height: 100%;
       width: 100%;
-      background: linear-gradient(to right, #44dd55, #ffcc33, #ff5544);
+      height: 100%;
       transform-origin: left center;
+      background: linear-gradient(to right, #45dd59, #ffdf4d, #ff5a4e);
     }
 
     #speedWrap {
       position: absolute;
-      right: 14px;
-      bottom: 130px;
-      z-index: 25;
-      width: 120px;
+      right: 16px;
+      bottom: 132px;
+      z-index: 40;
+      width: 140px;
       pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
 
     #speedLabel {
+      text-align: right;
       font-size: 14px;
       margin-bottom: 6px;
-      text-align: right;
       opacity: 0.9;
     }
 
     #speedMeter {
       height: 16px;
-      background: rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.16);
       border-radius: 999px;
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.12);
     }
 
     #speedFill {
-      height: 100%;
       width: 20%;
-      background: linear-gradient(to right, #3de34f, #ffe14a, #ff5a4d);
-      transition: width 0.1s linear;
+      height: 100%;
+      background: linear-gradient(to right, #39e04d, #ffe04f, #ff5d50);
+      transition: width 0.12s linear;
     }
 
     #speedValue {
+      margin-top: 5px;
       text-align: right;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: bold;
-      margin-top: 4px;
     }
 
+    /* ===== フィールド ===== */
     #field {
       position: absolute;
       inset: 0;
+      z-index: 5;
       overflow: hidden;
     }
 
@@ -161,75 +274,95 @@
       top: 0;
       bottom: 0;
       width: 20%;
-      border-left: 1px solid rgba(255,255,255,0.04);
+      left: 0;
+      border-left: 1px solid var(--lane-line);
       pointer-events: none;
+      opacity: 0.8;
     }
 
+    /* ===== プレイヤー ===== */
     #player {
       position: absolute;
-      bottom: 15%;
-      width: 18%;
-      height: 72px;
       left: 41%;
+      bottom: 180px;
+      width: 18%;
+      height: 78px;
       border-radius: 16px;
-      background: #36e84a;
+      background: rgba(57, 224, 77, 0.18);
+      border: 2px solid rgba(57, 224, 77, 0.75);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 34px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.35);
+      z-index: 30;
       transition: left 0.08s steps(1);
-      z-index: 15;
+      box-shadow: 0 10px 18px rgba(0,0,0,0.32);
+    }
+
+    .cart-body {
+      font-size: 44px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
     }
 
     #player.hit {
-      background: #ffb347;
       transform: translateY(6px) rotate(-8deg);
+      background: rgba(255, 184, 71, 0.18);
+      border-color: rgba(255, 184, 71, 0.85);
     }
 
+    /* ===== 落下物 ===== */
     .entity {
       position: absolute;
       width: 18%;
-      height: 44px;
-      border-radius: 12px;
+      height: 48px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 28px;
-      box-shadow: 0 6px 10px rgba(0,0,0,0.25);
-      z-index: 10;
+      z-index: 12;
       pointer-events: none;
+      box-shadow: 0 8px 14px rgba(0,0,0,0.24);
+      backdrop-filter: blur(2px);
     }
 
     .item {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.14);
     }
 
-    .danger {
-      background: #2b2b2b;
-      border: 2px solid #ffd54d;
-      color: #ffd54d;
-      font-size: 16px;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-
     .obstacle {
-      background: rgba(255,100,100,0.18);
-      border: 1px solid rgba(255,160,160,0.35);
+      background: rgba(255,110,110,0.16);
+      border: 1px solid rgba(255,160,160,0.24);
     }
 
+    .danger {
+      background: repeating-linear-gradient(
+        -45deg,
+        #1f1f1f 0px,
+        #1f1f1f 14px,
+        #ffd447 14px,
+        #ffd447 28px
+      );
+      border: 2px solid #111;
+      color: #111;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-shadow: none;
+    }
+
+    /* ===== メッセージ ===== */
     #message {
       position: absolute;
       left: 50%;
-      top: 42%;
+      top: 40%;
       transform: translate(-50%, -50%);
-      z-index: 50;
+      z-index: 60;
       text-align: center;
-      pointer-events: none;
       opacity: 0;
       transition: opacity 0.15s ease;
+      pointer-events: none;
       text-shadow: 0 4px 8px rgba(0,0,0,0.65);
     }
 
@@ -238,50 +371,51 @@
     }
 
     #messageMain {
-      font-size: clamp(28px, 6vw, 52px);
+      font-size: clamp(28px, 7vw, 56px);
       font-weight: 900;
-      line-height: 1.05;
+      line-height: 1;
     }
 
     #messageSub {
       margin-top: 8px;
-      font-size: clamp(18px, 3vw, 28px);
-      font-weight: 700;
+      font-size: clamp(18px, 3vw, 30px);
+      font-weight: 800;
     }
 
     #pickupText {
       position: absolute;
       left: 50%;
-      top: 28%;
+      top: 24%;
       transform: translateX(-50%);
-      z-index: 40;
-      pointer-events: none;
+      z-index: 55;
       font-size: 28px;
-      font-weight: bold;
+      font-weight: 900;
       opacity: 0;
-      text-shadow: 0 3px 6px rgba(0,0,0,0.6);
+      pointer-events: none;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.65);
     }
 
     #pickupText.show {
-      animation: popText 0.55s ease;
+      animation: pickupPop 0.55s ease;
     }
 
-    @keyframes popText {
+    @keyframes pickupPop {
       0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.9); }
-      15% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1.05); }
+      18% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.06); }
       100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(1); }
     }
 
+    /* ===== ボタン ===== */
     #controls {
-      position: absolute;
+      position: fixed;
       inset: 0;
-      z-index: 35;
+      z-index: 9999;
       pointer-events: none;
     }
 
     .control-btn {
-      position: absolute;
-      bottom: max(78px, env(safe-area-inset-bottom, 14px));
+      position: fixed;
+      bottom: max(86px, env(safe-area-inset-bottom, 12px));
       width: 158px;
       height: 102px;
       border: none;
@@ -289,10 +423,11 @@
       background: var(--btn-bg);
       color: #111;
       font-size: 42px;
-      font-weight: bold;
+      font-weight: 900;
       box-shadow: 0 8px 18px rgba(0,0,0,0.34);
       pointer-events: auto;
       touch-action: manipulation;
+      will-change: transform;
     }
 
     .control-btn:active {
@@ -309,11 +444,11 @@
     }
 
     #accelBtn {
-      position: absolute;
+      position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: max(78px, env(safe-area-inset-bottom, 14px));
-      width: 176px;
+      bottom: max(88px, env(safe-area-inset-bottom, 12px));
+      width: 178px;
       height: 86px;
       border: none;
       border-radius: 20px;
@@ -324,43 +459,45 @@
       box-shadow: 0 8px 18px rgba(0,0,0,0.34);
       pointer-events: auto;
       touch-action: manipulation;
+      will-change: transform;
     }
 
     #accelBtn:active {
       transform: translateX(-50%) scale(0.97);
     }
 
+    /* ===== リザルト ===== */
     #resultOverlay {
       position: absolute;
       inset: 0;
-      z-index: 80;
-      background: rgba(0,0,0,0.82);
+      z-index: 200;
       display: none;
       align-items: center;
       justify-content: center;
+      background: rgba(0,0,0,0.82);
       padding: 24px;
     }
 
     #resultCard {
       width: min(92vw, 560px);
       background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 24px;
       padding: 24px;
       text-align: center;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+      box-shadow: 0 14px 26px rgba(0,0,0,0.34);
     }
 
     #resultTitle {
-      font-size: clamp(26px, 5vw, 40px);
+      font-size: clamp(28px, 6vw, 44px);
       font-weight: 900;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     #resultScore {
       font-size: clamp(22px, 4vw, 34px);
+      font-weight: 900;
       margin-bottom: 10px;
-      font-weight: bold;
     }
 
     #resultRank {
@@ -371,50 +508,107 @@
     #couponText {
       font-size: clamp(18px, 3vw, 26px);
       color: #ffe04f;
-      margin-bottom: 20px;
       font-weight: bold;
+      margin-bottom: 18px;
     }
 
     #retryBtn {
       border: none;
       border-radius: 16px;
-      background: #ffffff;
+      background: #fff;
       color: #111;
-      padding: 14px 24px;
       font-size: 20px;
-      font-weight: bold;
+      font-weight: 900;
+      padding: 14px 26px;
     }
 
     @media (max-width: 900px) {
+      .shelf {
+        width: 24%;
+      }
+      #road {
+        left: 22%;
+        right: 22%;
+      }
       .control-btn {
-        width: 138px;
+        width: 140px;
         height: 96px;
-        font-size: 38px;
       }
       #accelBtn {
-        width: 160px;
+        width: 164px;
         height: 82px;
-        font-size: 26px;
+      }
+      #player {
+        bottom: 170px;
       }
       #speedWrap {
-        bottom: 122px;
+        bottom: 132px;
       }
     }
   </style>
 </head>
 <body>
   <div id="game">
-    <div id="road"></div>
+    <div id="scene">
+      <div id="ceiling"></div>
 
-    <div id="ui">
-      <div class="ui-block">
-        <div class="ui-label">SCORE</div>
-        <div id="score" class="ui-value">0</div>
+      <div id="leftShelf" class="shelf">
+        <div class="shelf-products">
+          <div class="row">
+            <div class="prod p1"></div><div class="prod p3"></div><div class="prod p2"></div><div class="prod p5"></div><div class="prod p4"></div>
+          </div>
+          <div class="row">
+            <div class="prod p6"></div><div class="prod p1"></div><div class="prod p3"></div><div class="prod p4"></div><div class="prod p2"></div>
+          </div>
+          <div class="row">
+            <div class="prod p2"></div><div class="prod p5"></div><div class="prod p1"></div><div class="prod p6"></div><div class="prod p3"></div>
+          </div>
+          <div class="row">
+            <div class="prod p4"></div><div class="prod p1"></div><div class="prod p5"></div><div class="prod p2"></div><div class="prod p3"></div>
+          </div>
+          <div class="row">
+            <div class="prod p6"></div><div class="prod p2"></div><div class="prod p4"></div><div class="prod p5"></div><div class="prod p1"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="ui-block" style="text-align:right;">
-        <div class="ui-label">TIME GAUGE</div>
-        <div id="timeValue" class="ui-value">60</div>
+      <div id="rightShelf" class="shelf">
+        <div class="shelf-products">
+          <div class="row">
+            <div class="prod p4"></div><div class="prod p2"></div><div class="prod p1"></div><div class="prod p5"></div><div class="prod p3"></div>
+          </div>
+          <div class="row">
+            <div class="prod p1"></div><div class="prod p3"></div><div class="prod p5"></div><div class="prod p6"></div><div class="prod p2"></div>
+          </div>
+          <div class="row">
+            <div class="prod p3"></div><div class="prod p4"></div><div class="prod p2"></div><div class="prod p1"></div><div class="prod p6"></div>
+          </div>
+          <div class="row">
+            <div class="prod p2"></div><div class="prod p6"></div><div class="prod p1"></div><div class="prod p4"></div><div class="prod p5"></div>
+          </div>
+          <div class="row">
+            <div class="prod p5"></div><div class="prod p2"></div><div class="prod p4"></div><div class="prod p1"></div><div class="prod p3"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="road"></div>
+
+      <div id="sign1" class="sign red">菓子</div>
+      <div id="sign2" class="sign green">飲料</div>
+      <div id="sign3" class="sign blue">雑貨</div>
+      <div id="sign4" class="sign green">野菜</div>
+    </div>
+
+    <div id="ui">
+      <div class="ui-box">
+        <div class="ui-title">SCORE</div>
+        <div id="score" class="ui-main">0</div>
+      </div>
+
+      <div class="ui-box" style="text-align:right;">
+        <div class="ui-title">TIME GAUGE</div>
+        <div id="timeValue" class="ui-main">60</div>
         <div id="timeBarWrap">
           <div id="timeBar"></div>
         </div>
@@ -428,13 +622,15 @@
     </div>
 
     <div id="field">
-      <div class="lane-guide" style="left: 0%;"></div>
-      <div class="lane-guide" style="left: 20%;"></div>
-      <div class="lane-guide" style="left: 40%;"></div>
-      <div class="lane-guide" style="left: 60%;"></div>
-      <div class="lane-guide" style="left: 80%;"></div>
+      <div class="lane-guide" style="left:0%;"></div>
+      <div class="lane-guide" style="left:20%;"></div>
+      <div class="lane-guide" style="left:40%;"></div>
+      <div class="lane-guide" style="left:60%;"></div>
+      <div class="lane-guide" style="left:80%;"></div>
 
-      <div id="player">🛒</div>
+      <div id="player">
+        <span class="cart-body">🛒</span>
+      </div>
     </div>
 
     <div id="pickupText"></div>
@@ -464,7 +660,6 @@
   <script>
     const LANES = 5;
     const START_TIME = 60;
-    const PLAYER_WIDTH_PERCENT = 18;
     const LANE_STEP = 20;
     const PLAYER_LEFT_OFFSET = 1;
 
@@ -486,6 +681,8 @@
     const resultScoreEl = document.getElementById("resultScore");
     const resultRankEl = document.getElementById("resultRank");
     const retryBtn = document.getElementById("retryBtn");
+    const leftShelfEl = document.getElementById("leftShelf");
+    const rightShelfEl = document.getElementById("rightShelf");
 
     let lane = 2;
     let score = 0;
@@ -496,20 +693,22 @@
     let accelPressed = false;
     let spawnIntervalId = null;
     let timerIntervalId = null;
+    let dangerCooldown = 0;
 
     const activeEntities = new Set();
 
     const itemTable = [
-      { emoji: "🥕", points: 1500, type: "item", weight: 35, label: "+1500" },
-      { emoji: "🐟", points: 2000, type: "item", weight: 25, label: "+2000" },
-      { emoji: "🥔", points: 3000, type: "item", weight: 15, label: "+3000" },
-      { emoji: "🍞", points: 4000, type: "item", weight: 15, label: "+4000" },
-      { emoji: "🥩", points: 5000, type: "item", weight: 10, label: "+5000" }
+      { emoji: "🥕", points: 1500, type: "item", weight: 30, label: "+1500" },
+      { emoji: "🐟", points: 2000, type: "item", weight: 24, label: "+2000" },
+      { emoji: "🥔", points: 3000, type: "item", weight: 18, label: "+3000" },
+      { emoji: "🍞", points: 4000, type: "item", weight: 16, label: "+4000" },
+      { emoji: "🥩", points: 5000, type: "item", weight: 12, label: "+5000" }
     ];
 
     const obstacleTable = [
-      { emoji: "🛒", points: -50000, type: "obstacle", weight: 70, danger: false },
-      { emoji: "📦", points: -50000, type: "obstacle", weight: 30, danger: false }
+      { emoji: "🚧", points: -50000, type: "obstacle", weight: 45, danger: false },
+      { emoji: "📦", points: -50000, type: "obstacle", weight: 35, danger: false },
+      { emoji: "🧍", points: -100000, type: "obstacle", weight: 20, danger: false }
     ];
 
     function setPlayerLane() {
@@ -518,10 +717,16 @@
 
     function updateUI() {
       scoreEl.textContent = score.toLocaleString();
-      timeValueEl.textContent = Math.max(0, timeLeft).toString();
+      timeValueEl.textContent = Math.max(0, Math.ceil(timeLeft)).toString();
       timeBarEl.style.transform = `scaleX(${Math.max(0, timeLeft) / START_TIME})`;
       speedFillEl.style.width = `${Math.min(100, speedLevel * 10)}%`;
-      speedValueEl.textContent = String(speedLevel);
+      speedValueEl.textContent = String(Math.max(1, Math.round(speedLevel)));
+    }
+
+    function updateShelfMotion() {
+      const intensity = Math.min(18, speedLevel * 1.4 + (accelPressed ? 6 : 0));
+      leftShelfEl.style.transform = `translateX(${-intensity}px)`;
+      rightShelfEl.style.transform = `translateX(${intensity}px)`;
     }
 
     function pickWeighted(list) {
@@ -586,13 +791,16 @@
     function createEntity() {
       if (!running) return;
 
-      const isDanger = Math.random() < Math.max(0.05, Math.min(0.18, (speedLevel - 7) * 0.03));
+      const canSpawnDanger = speedLevel >= 8 && dangerCooldown <= 0;
+      const isDanger = canSpawnDanger && Math.random() < 0.12;
+
       let data;
       let className;
 
-      if (isDanger && speedLevel >= 8) {
+      if (isDanger) {
         data = { emoji: "DANGER", points: -500000, type: "danger", danger: true };
         className = "entity danger";
+        dangerCooldown = 3;
       } else if (Math.random() < 0.72) {
         data = pickWeighted(itemTable);
         className = "entity item";
@@ -608,13 +816,13 @@
       entity.dataset.points = String(data.points);
       entity.dataset.type = data.type;
       entity.style.left = `${laneIndex * LANE_STEP + PLAYER_LEFT_OFFSET}%`;
-      entity.style.top = "-50px";
+      entity.style.top = "-56px";
       entity.textContent = data.emoji;
 
       fieldEl.appendChild(entity);
       activeEntities.add(entity);
 
-      let y = -50;
+      let y = -56;
 
       const move = () => {
         if (!running) {
@@ -623,11 +831,11 @@
           return;
         }
 
-        const baseFall = 4 + speedLevel * 0.9 + (accelPressed ? 2.3 : 0);
-        y += baseFall;
+        const fallSpeed = 4 + speedLevel * 0.9 + (accelPressed ? 2.4 : 0);
+        y += fallSpeed;
         entity.style.top = `${y}px`;
 
-        const triggerY = window.innerHeight * 0.74;
+        const triggerY = window.innerHeight - 270;
         if (y >= triggerY) {
           const entityLane = Number(entity.dataset.lane);
           const type = entity.dataset.type;
@@ -666,7 +874,7 @@
           }
         }
 
-        if (y > window.innerHeight + 60) {
+        if (y > window.innerHeight + 80) {
           entity.remove();
           activeEntities.delete(entity);
           return;
@@ -733,6 +941,7 @@
       running = true;
       hitLock = false;
       accelPressed = false;
+      dangerCooldown = 0;
       resultOverlayEl.style.display = "none";
 
       document.querySelectorAll(".entity").forEach(el => el.remove());
@@ -740,6 +949,7 @@
 
       setPlayerLane();
       updateUI();
+      updateShelfMotion();
       showMessage("スリルカート、開店ッ！！", "", 900);
 
       clearInterval(spawnIntervalId);
@@ -747,7 +957,8 @@
 
       spawnIntervalId = setInterval(() => {
         createEntity();
-        if (Math.random() < 0.25 && speedLevel >= 7) createEntity();
+        if (Math.random() < 0.22 && speedLevel >= 6) createEntity();
+        if (dangerCooldown > 0) dangerCooldown--;
       }, 780);
 
       timerIntervalId = setInterval(() => {
@@ -772,6 +983,7 @@
         }
 
         updateUI();
+        updateShelfMotion();
       }, 1000);
     }
 
@@ -779,6 +991,7 @@
 
     setPlayerLane();
     updateUI();
+    updateShelfMotion();
     startGame();
   </script>
 </body>
