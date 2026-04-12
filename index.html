@@ -1,151 +1,785 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>スリルカート試作1号</title>
-<style>
-body {
-  margin:0;
-  background:#111;
-  color:#fff;
-  font-family:sans-serif;
-  overflow:hidden;
-}
-#game {
-  position:relative;
-  width:100vw;
-  height:100vh;
-  background:#222;
-}
-.lane {
-  position:absolute;
-  top:0;
-  bottom:0;
-  width:20%;
-  border-left:1px solid rgba(255,255,255,0.1);
-}
-.player {
-  position:absolute;
-  bottom:10%;
-  width:18%;
-  height:60px;
-  background:#0f0;
-  text-align:center;
-  line-height:60px;
-}
-.item {
-  position:absolute;
-  width:18%;
-  height:40px;
-  text-align:center;
-  line-height:40px;
-}
-#ui {
-  position:absolute;
-  top:10px;
-  left:10px;
-}
-button {
-  position:absolute;
-  bottom:20px;
-  width:80px;
-  height:80px;
-  opacity:0.5;
-  font-size:24px;
-}
-#left { left:20px; }
-#right { right:20px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  />
+  <title>スリルカート 試作1号改</title>
+  <style>
+    :root {
+      --bg: #1c1c1c;
+      --panel: rgba(255, 255, 255, 0.12);
+      --text: #ffffff;
+      --btn-bg: rgba(230, 230, 230, 0.78);
+      --btn-active: rgba(255, 255, 255, 0.92);
+      --accel-bg: #39e04d;
+      --danger: #ffcc00;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+      font-family: sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    body {
+      color: var(--text);
+    }
+
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background:
+        linear-gradient(to bottom, #262626 0%, #1f1f1f 100%);
+    }
+
+    /* 奥行きの雰囲気だけ先に */
+    #road {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.02) 0px,
+          rgba(255,255,255,0.02) 18px,
+          rgba(0,0,0,0.00) 18px,
+          rgba(0,0,0,0.00) 36px
+        );
+    }
+
+    #ui {
+      position: absolute;
+      top: env(safe-area-inset-top, 10px);
+      left: 10px;
+      right: 10px;
+      z-index: 30;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    .ui-block {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 12px;
+      padding: 8px 12px;
+      min-width: 120px;
+    }
+
+    .ui-label {
+      font-size: 14px;
+      opacity: 0.85;
+      margin-bottom: 2px;
+    }
+
+    .ui-value {
+      font-size: 28px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    #timeBarWrap {
+      width: 180px;
+      height: 18px;
+      margin-top: 6px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #timeBar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(to right, #44dd55, #ffcc33, #ff5544);
+      transform-origin: left center;
+    }
+
+    #speedWrap {
+      position: absolute;
+      right: 14px;
+      bottom: 130px;
+      z-index: 25;
+      width: 120px;
+      pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    #speedLabel {
+      font-size: 14px;
+      margin-bottom: 6px;
+      text-align: right;
+      opacity: 0.9;
+    }
+
+    #speedMeter {
+      height: 16px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    #speedFill {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(to right, #3de34f, #ffe14a, #ff5a4d);
+      transition: width 0.1s linear;
+    }
+
+    #speedValue {
+      text-align: right;
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+
+    #field {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .lane-guide {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 20%;
+      border-left: 1px solid rgba(255,255,255,0.04);
+      pointer-events: none;
+    }
+
+    #player {
+      position: absolute;
+      bottom: 15%;
+      width: 18%;
+      height: 72px;
+      left: 41%;
+      border-radius: 16px;
+      background: #36e84a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.35);
+      transition: left 0.08s steps(1);
+      z-index: 15;
+    }
+
+    #player.hit {
+      background: #ffb347;
+      transform: translateY(6px) rotate(-8deg);
+    }
+
+    .entity {
+      position: absolute;
+      width: 18%;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 6px 10px rgba(0,0,0,0.25);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .danger {
+      background: #2b2b2b;
+      border: 2px solid #ffd54d;
+      color: #ffd54d;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .obstacle {
+      background: rgba(255,100,100,0.18);
+      border: 1px solid rgba(255,160,160,0.35);
+    }
+
+    #message {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      text-shadow: 0 4px 8px rgba(0,0,0,0.65);
+    }
+
+    #message.show {
+      opacity: 1;
+    }
+
+    #messageMain {
+      font-size: clamp(28px, 6vw, 52px);
+      font-weight: 900;
+      line-height: 1.05;
+    }
+
+    #messageSub {
+      margin-top: 8px;
+      font-size: clamp(18px, 3vw, 28px);
+      font-weight: 700;
+    }
+
+    #pickupText {
+      position: absolute;
+      left: 50%;
+      top: 28%;
+      transform: translateX(-50%);
+      z-index: 40;
+      pointer-events: none;
+      font-size: 28px;
+      font-weight: bold;
+      opacity: 0;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.6);
+    }
+
+    #pickupText.show {
+      animation: popText 0.55s ease;
+    }
+
+    @keyframes popText {
+      0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.9); }
+      15% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1.05); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(1); }
+    }
+
+    #controls {
+      position: absolute;
+      inset: 0;
+      z-index: 35;
+      pointer-events: none;
+    }
+
+    .control-btn {
+      position: absolute;
+      bottom: max(78px, env(safe-area-inset-bottom, 14px));
+      width: 158px;
+      height: 102px;
+      border: none;
+      border-radius: 22px;
+      background: var(--btn-bg);
+      color: #111;
+      font-size: 42px;
+      font-weight: bold;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.34);
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .control-btn:active {
+      transform: scale(0.97);
+      background: var(--btn-active);
+    }
+
+    #leftBtn {
+      left: 24px;
+    }
+
+    #rightBtn {
+      right: 24px;
+    }
+
+    #accelBtn {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: max(78px, env(safe-area-inset-bottom, 14px));
+      width: 176px;
+      height: 86px;
+      border: none;
+      border-radius: 20px;
+      background: var(--accel-bg);
+      color: #111;
+      font-size: 28px;
+      font-weight: 900;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.34);
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    #accelBtn:active {
+      transform: translateX(-50%) scale(0.97);
+    }
+
+    #resultOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 80;
+      background: rgba(0,0,0,0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    #resultCard {
+      width: min(92vw, 560px);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+    }
+
+    #resultTitle {
+      font-size: clamp(26px, 5vw, 40px);
+      font-weight: 900;
+      margin-bottom: 14px;
+    }
+
+    #resultScore {
+      font-size: clamp(22px, 4vw, 34px);
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    #resultRank {
+      font-size: clamp(18px, 3vw, 28px);
+      margin-bottom: 16px;
+    }
+
+    #couponText {
+      font-size: clamp(18px, 3vw, 26px);
+      color: #ffe04f;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    #retryBtn {
+      border: none;
+      border-radius: 16px;
+      background: #ffffff;
+      color: #111;
+      padding: 14px 24px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 900px) {
+      .control-btn {
+        width: 138px;
+        height: 96px;
+        font-size: 38px;
+      }
+      #accelBtn {
+        width: 160px;
+        height: 82px;
+        font-size: 26px;
+      }
+      #speedWrap {
+        bottom: 122px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div id="game">
+    <div id="road"></div>
 
-<div id="game">
-  <div id="ui">
-    <div>スコア: <span id="score">0</span></div>
-    <div>時間: <span id="time">60</span></div>
+    <div id="ui">
+      <div class="ui-block">
+        <div class="ui-label">SCORE</div>
+        <div id="score" class="ui-value">0</div>
+      </div>
+
+      <div class="ui-block" style="text-align:right;">
+        <div class="ui-label">TIME GAUGE</div>
+        <div id="timeValue" class="ui-value">60</div>
+        <div id="timeBarWrap">
+          <div id="timeBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="speedWrap">
+      <div id="speedLabel">SPEEDOMETER</div>
+      <div id="speedMeter"><div id="speedFill"></div></div>
+      <div id="speedValue">1</div>
+    </div>
+
+    <div id="field">
+      <div class="lane-guide" style="left: 0%;"></div>
+      <div class="lane-guide" style="left: 20%;"></div>
+      <div class="lane-guide" style="left: 40%;"></div>
+      <div class="lane-guide" style="left: 60%;"></div>
+      <div class="lane-guide" style="left: 80%;"></div>
+
+      <div id="player">🛒</div>
+    </div>
+
+    <div id="pickupText"></div>
+
+    <div id="message">
+      <div id="messageMain"></div>
+      <div id="messageSub"></div>
+    </div>
+
+    <div id="controls">
+      <button id="leftBtn" class="control-btn" aria-label="左へ移動">←</button>
+      <button id="rightBtn" class="control-btn" aria-label="右へ移動">→</button>
+      <button id="accelBtn" aria-label="加速">ACCEL</button>
+    </div>
+
+    <div id="resultOverlay">
+      <div id="resultCard">
+        <div id="resultTitle">買い物終了ッ！！</div>
+        <div id="resultScore">スコア: 0</div>
+        <div id="resultRank">こどものおつかい</div>
+        <div id="couponText">靴下・パンスト・レギンス 10%OFF</div>
+        <button id="retryBtn">もう一回やる</button>
+      </div>
+    </div>
   </div>
-  <div id="player" class="player">🛒</div>
-</div>
 
-<button id="left">←</button>
-<button id="right">→</button>
+  <script>
+    const LANES = 5;
+    const START_TIME = 60;
+    const PLAYER_WIDTH_PERCENT = 18;
+    const LANE_STEP = 20;
+    const PLAYER_LEFT_OFFSET = 1;
 
-<script>
-const player = document.getElementById("player");
-const game = document.getElementById("game");
-const scoreEl = document.getElementById("score");
-const timeEl = document.getElementById("time");
+    const scoreEl = document.getElementById("score");
+    const timeValueEl = document.getElementById("timeValue");
+    const timeBarEl = document.getElementById("timeBar");
+    const speedFillEl = document.getElementById("speedFill");
+    const speedValueEl = document.getElementById("speedValue");
+    const fieldEl = document.getElementById("field");
+    const playerEl = document.getElementById("player");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const accelBtn = document.getElementById("accelBtn");
+    const messageEl = document.getElementById("message");
+    const messageMainEl = document.getElementById("messageMain");
+    const messageSubEl = document.getElementById("messageSub");
+    const pickupTextEl = document.getElementById("pickupText");
+    const resultOverlayEl = document.getElementById("resultOverlay");
+    const resultScoreEl = document.getElementById("resultScore");
+    const resultRankEl = document.getElementById("resultRank");
+    const retryBtn = document.getElementById("retryBtn");
 
-let lane = 2;
-let score = 0;
-let time = 60;
+    let lane = 2;
+    let score = 0;
+    let timeLeft = START_TIME;
+    let speedLevel = 1;
+    let running = true;
+    let hitLock = false;
+    let accelPressed = false;
+    let spawnIntervalId = null;
+    let timerIntervalId = null;
 
-function updatePlayer() {
-  player.style.left = (lane * 20 + 1) + "%";
-}
-updatePlayer();
+    const activeEntities = new Set();
 
-document.getElementById("left").onclick = () => {
-  if(lane > 0) lane--;
-  updatePlayer();
-};
-document.getElementById("right").onclick = () => {
-  if(lane < 4) lane++;
-  updatePlayer();
-};
+    const itemTable = [
+      { emoji: "🥕", points: 1500, type: "item", weight: 35, label: "+1500" },
+      { emoji: "🐟", points: 2000, type: "item", weight: 25, label: "+2000" },
+      { emoji: "🥔", points: 3000, type: "item", weight: 15, label: "+3000" },
+      { emoji: "🍞", points: 4000, type: "item", weight: 15, label: "+4000" },
+      { emoji: "🥩", points: 5000, type: "item", weight: 10, label: "+5000" }
+    ];
 
-function spawnItem() {
-  const item = document.createElement("div");
-  item.className = "item";
-  const type = Math.random();
+    const obstacleTable = [
+      { emoji: "🛒", points: -50000, type: "obstacle", weight: 70, danger: false },
+      { emoji: "📦", points: -50000, type: "obstacle", weight: 30, danger: false }
+    ];
 
-  let points = 0;
-  let text = "";
+    function setPlayerLane() {
+      playerEl.style.left = `${lane * LANE_STEP + PLAYER_LEFT_OFFSET}%`;
+    }
 
-  if(type < 0.6) { text="🥕"; points=500; }
-  else if(type < 0.85) { text="🐟"; points=1000; }
-  else { text="🥩"; points=3000; }
+    function updateUI() {
+      scoreEl.textContent = score.toLocaleString();
+      timeValueEl.textContent = Math.max(0, timeLeft).toString();
+      timeBarEl.style.transform = `scaleX(${Math.max(0, timeLeft) / START_TIME})`;
+      speedFillEl.style.width = `${Math.min(100, speedLevel * 10)}%`;
+      speedValueEl.textContent = String(speedLevel);
+    }
 
-  item.innerText = text;
-  let itemLane = Math.floor(Math.random()*5);
-  item.style.left = (itemLane*20+1)+"%";
-  item.style.top = "0px";
-
-  game.appendChild(item);
-
-  let fall = setInterval(() => {
-    let y = parseInt(item.style.top);
-    item.style.top = (y+5)+"px";
-
-    if(y > window.innerHeight*0.8) {
-      if(itemLane === lane) {
-        score += points;
-        scoreEl.innerText = score;
+    function pickWeighted(list) {
+      const total = list.reduce((sum, item) => sum + item.weight, 0);
+      let r = Math.random() * total;
+      for (const item of list) {
+        r -= item.weight;
+        if (r <= 0) return item;
       }
-      item.remove();
-      clearInterval(fall);
+      return list[list.length - 1];
     }
 
-    if(y > window.innerHeight) {
-      item.remove();
-      clearInterval(fall);
+    function showPickup(text, color = "#ffe35a") {
+      pickupTextEl.textContent = text;
+      pickupTextEl.style.color = color;
+      pickupTextEl.classList.remove("show");
+      void pickupTextEl.offsetWidth;
+      pickupTextEl.classList.add("show");
     }
-  }, 30);
-}
 
-setInterval(spawnItem, 800);
+    let msgTimeout = null;
+    function showMessage(main, sub = "", duration = 700) {
+      messageMainEl.textContent = main;
+      messageSubEl.textContent = sub;
+      messageEl.classList.add("show");
+      clearTimeout(msgTimeout);
+      msgTimeout = setTimeout(() => {
+        messageEl.classList.remove("show");
+      }, duration);
+    }
 
-setInterval(() => {
-  time--;
-  timeEl.innerText = time;
+    function getRank(scoreValue) {
+      if (scoreValue >= 50000) return "真・買い物上手の総大将";
+      if (scoreValue >= 30000) return "無尽蔵の買い物マイスター";
+      if (scoreValue >= 20000) return "時代を担う買い物上手";
+      if (scoreValue >= 10000) return "神速カスタマー";
+      if (scoreValue >= 5000) return "努力の天才";
+      return "こどものおつかい";
+    }
 
-  if(time <= 0) {
-    alert("買い物終了ッ！！ スコア: " + score);
-    location.reload();
-  }
-}, 1000);
-</script>
+    function endGame() {
+      if (!running) return;
+      running = false;
 
+      clearInterval(spawnIntervalId);
+      clearInterval(timerIntervalId);
+
+      for (const entity of activeEntities) {
+        entity.remove();
+      }
+      activeEntities.clear();
+
+      showMessage("買い物終了ッ！！", "", 900);
+
+      setTimeout(() => {
+        resultScoreEl.textContent = `スコア: ${score.toLocaleString()}`;
+        resultRankEl.textContent = getRank(score);
+        resultOverlayEl.style.display = "flex";
+      }, 500);
+    }
+
+    function createEntity() {
+      if (!running) return;
+
+      const isDanger = Math.random() < Math.max(0.05, Math.min(0.18, (speedLevel - 7) * 0.03));
+      let data;
+      let className;
+
+      if (isDanger && speedLevel >= 8) {
+        data = { emoji: "DANGER", points: -500000, type: "danger", danger: true };
+        className = "entity danger";
+      } else if (Math.random() < 0.72) {
+        data = pickWeighted(itemTable);
+        className = "entity item";
+      } else {
+        data = pickWeighted(obstacleTable);
+        className = "entity obstacle";
+      }
+
+      const laneIndex = Math.floor(Math.random() * LANES);
+      const entity = document.createElement("div");
+      entity.className = className;
+      entity.dataset.lane = String(laneIndex);
+      entity.dataset.points = String(data.points);
+      entity.dataset.type = data.type;
+      entity.style.left = `${laneIndex * LANE_STEP + PLAYER_LEFT_OFFSET}%`;
+      entity.style.top = "-50px";
+      entity.textContent = data.emoji;
+
+      fieldEl.appendChild(entity);
+      activeEntities.add(entity);
+
+      let y = -50;
+
+      const move = () => {
+        if (!running) {
+          entity.remove();
+          activeEntities.delete(entity);
+          return;
+        }
+
+        const baseFall = 4 + speedLevel * 0.9 + (accelPressed ? 2.3 : 0);
+        y += baseFall;
+        entity.style.top = `${y}px`;
+
+        const triggerY = window.innerHeight * 0.74;
+        if (y >= triggerY) {
+          const entityLane = Number(entity.dataset.lane);
+          const type = entity.dataset.type;
+          const points = Number(entity.dataset.points);
+
+          if (entityLane === lane && !entity.dataset.done) {
+            entity.dataset.done = "1";
+
+            if (type === "item") {
+              score += points;
+              showPickup(`+${points.toLocaleString()}`, "#ffe35a");
+            } else if (type === "obstacle" && !hitLock) {
+              score += points;
+              hitLock = true;
+              playerEl.classList.add("hit");
+              showMessage("フロア事故発生！", "店長に呼ばれています", 900);
+              setTimeout(() => {
+                playerEl.classList.remove("hit");
+                hitLock = false;
+              }, 600);
+            } else if (type === "danger" && !hitLock) {
+              score += points;
+              hitLock = true;
+              playerEl.classList.add("hit");
+              showMessage("重大事故発生！", "バックヤード案件です", 1200);
+              setTimeout(() => {
+                playerEl.classList.remove("hit");
+                hitLock = false;
+              }, 900);
+            }
+
+            updateUI();
+            entity.remove();
+            activeEntities.delete(entity);
+            return;
+          }
+        }
+
+        if (y > window.innerHeight + 60) {
+          entity.remove();
+          activeEntities.delete(entity);
+          return;
+        }
+
+        requestAnimationFrame(move);
+      };
+
+      requestAnimationFrame(move);
+    }
+
+    function moveLeft() {
+      if (!running) return;
+      lane = Math.max(0, lane - 1);
+      setPlayerLane();
+    }
+
+    function moveRight() {
+      if (!running) return;
+      lane = Math.min(LANES - 1, lane + 1);
+      setPlayerLane();
+    }
+
+    function bindPress(button, onDown, onUp = null) {
+      const start = (e) => {
+        e.preventDefault();
+        onDown();
+      };
+      const end = (e) => {
+        e.preventDefault();
+        if (onUp) onUp();
+      };
+
+      button.addEventListener("pointerdown", start, { passive: false });
+      button.addEventListener("pointerup", end, { passive: false });
+      button.addEventListener("pointercancel", end, { passive: false });
+      button.addEventListener("pointerleave", end, { passive: false });
+    }
+
+    bindPress(leftBtn, moveLeft);
+    bindPress(rightBtn, moveRight);
+    bindPress(
+      accelBtn,
+      () => { accelPressed = true; },
+      () => { accelPressed = false; }
+    );
+
+    window.addEventListener("keydown", (e) => {
+      if (!running) return;
+      if (e.key === "ArrowLeft") moveLeft();
+      if (e.key === "ArrowRight") moveRight();
+      if (e.key === " " || e.key === "ArrowUp") accelPressed = true;
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.key === " " || e.key === "ArrowUp") accelPressed = false;
+    });
+
+    function startGame() {
+      lane = 2;
+      score = 0;
+      timeLeft = START_TIME;
+      speedLevel = 1;
+      running = true;
+      hitLock = false;
+      accelPressed = false;
+      resultOverlayEl.style.display = "none";
+
+      document.querySelectorAll(".entity").forEach(el => el.remove());
+      activeEntities.clear();
+
+      setPlayerLane();
+      updateUI();
+      showMessage("スリルカート、開店ッ！！", "", 900);
+
+      clearInterval(spawnIntervalId);
+      clearInterval(timerIntervalId);
+
+      spawnIntervalId = setInterval(() => {
+        createEntity();
+        if (Math.random() < 0.25 && speedLevel >= 7) createEntity();
+      }, 780);
+
+      timerIntervalId = setInterval(() => {
+        if (!running) return;
+
+        timeLeft -= 1;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          updateUI();
+          endGame();
+          return;
+        }
+
+        if (timeLeft % 12 === 0 && speedLevel < 10) {
+          speedLevel += 1;
+        }
+
+        if (accelPressed && speedLevel < 10) {
+          speedLevel = Math.min(10, speedLevel + 0.2);
+        } else if (!accelPressed && speedLevel > 1) {
+          speedLevel = Math.max(1, speedLevel - 0.08);
+        }
+
+        updateUI();
+      }, 1000);
+    }
+
+    retryBtn.addEventListener("click", startGame);
+
+    setPlayerLane();
+    updateUI();
+    startGame();
+  </script>
 </body>
 </html>
