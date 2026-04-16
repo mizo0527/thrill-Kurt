@@ -6,13 +6,13 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
   />
-  <title>スリルカート 試作4号</title>
+  <title>スリルカート 試作4号改</title>
   <style>
     :root {
       --bg: #111;
       --text: #fff;
       --ui-bg: rgba(0, 0, 0, 0.32);
-      --road1: #4c4c4c;
+      --road1: #505050;
       --road2: #252525;
       --btn-bg: rgba(235, 235, 235, 0.9);
       --btn-active: rgba(255, 255, 255, 1);
@@ -54,6 +54,17 @@
       overflow: hidden;
     }
 
+    #horizonGlow {
+      position: absolute;
+      left: 28%;
+      right: 28%;
+      top: 13%;
+      height: 10%;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.09), rgba(255,255,255,0));
+      filter: blur(8px);
+      opacity: 0.7;
+    }
+
     #ceiling {
       position: absolute;
       left: 16%;
@@ -71,6 +82,7 @@
         ),
         linear-gradient(to bottom, #b7b1a7, #8c857a);
       clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+      transform-origin: center top;
     }
 
     .shelf {
@@ -145,14 +157,25 @@
         repeating-linear-gradient(
           to bottom,
           rgba(255,255,255,0.05) 0px,
-          rgba(255,255,255,0.05) 10px,
-          transparent 10px,
-          transparent 44px
+          rgba(255,255,255,0.05) 8px,
+          transparent 8px,
+          transparent 40px
         ),
         linear-gradient(to bottom, var(--road1), var(--road2));
       clip-path: polygon(16% 0, 84% 0, 100% 100%, 0 100%);
       z-index: 2;
-      background-position-y: 0px;
+      background-position-y: 0px, 0px, 0px;
+    }
+
+    #roadNearGlow {
+      position: absolute;
+      left: 24%;
+      right: 24%;
+      bottom: 17%;
+      height: 18%;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.06), rgba(255,255,255,0));
+      z-index: 3;
+      pointer-events: none;
     }
 
     /* ===== UI ===== */
@@ -211,7 +234,7 @@
       right: 16px;
       bottom: 138px;
       z-index: 50;
-      width: 150px;
+      width: 160px;
       pointer-events: none;
       text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
@@ -224,7 +247,7 @@
     }
 
     #speedMeter {
-      height: 16px;
+      height: 18px;
       background: rgba(255,255,255,0.16);
       border-radius: 999px;
       overflow: hidden;
@@ -232,7 +255,7 @@
     }
 
     #speedFill {
-      width: 20%;
+      width: 16%;
       height: 100%;
       background: linear-gradient(to right, #39e04d, #ffe04f, #ff5d50);
       transition: width 0.12s linear;
@@ -241,7 +264,7 @@
     #speedValue {
       margin-top: 4px;
       text-align: right;
-      font-size: 24px;
+      font-size: 26px;
       font-weight: bold;
     }
 
@@ -258,7 +281,7 @@
       top: 0;
       bottom: 0;
       width: 33.3333%;
-      border-left: 1px solid rgba(255,255,255,0.04);
+      border-left: 1px solid rgba(255,255,255,0.035);
       pointer-events: none;
     }
 
@@ -541,6 +564,7 @@
 <body>
   <div id="game">
     <div id="scene">
+      <div id="horizonGlow"></div>
       <div id="ceiling"></div>
 
       <div id="leftShelf" class="shelf">
@@ -564,6 +588,7 @@
       </div>
 
       <div id="road"></div>
+      <div id="roadNearGlow"></div>
     </div>
 
     <div id="ui">
@@ -656,6 +681,8 @@
     const retryBtn = document.getElementById("retryBtn");
     const leftShelfEl = document.getElementById("leftShelf");
     const rightShelfEl = document.getElementById("rightShelf");
+    const ceilingEl = document.getElementById("ceiling");
+    const horizonGlowEl = document.getElementById("horizonGlow");
 
     const obaLight = new Audio("audio_24429_sample.mp3");
     const obaHeavy = new Audio("audio_24440_sample.mp3");
@@ -719,17 +746,23 @@
       scoreEl.textContent = score.toLocaleString();
       timeValueEl.textContent = Math.max(0, Math.ceil(timeLeft)).toString();
       timeBarEl.style.transform = `scaleX(${Math.max(0, timeLeft) / START_TIME})`;
-      speedFillEl.style.width = `${Math.min(100, speedLevel * 10)}%`;
+      speedFillEl.style.width = `${12 + Math.min(88, speedLevel * 11)}%`;
       speedValueEl.textContent = String(Math.round(speedLevel));
     }
 
     function updateEnvironment() {
-      const shelfShift = Math.min(14, speedLevel * 1.2 + (accelPressed ? 4 : 0));
+      const accelBonus = accelPressed ? 1.5 : 0;
+      const shelfShift = Math.min(10, speedLevel * 0.65 + accelBonus);
+      const farShift = Math.min(4, speedLevel * 0.18 + accelBonus * 0.2);
+
       leftShelfEl.style.transform = `translateX(${-shelfShift}px)`;
       rightShelfEl.style.transform = `translateX(${shelfShift}px)`;
 
-      roadOffset += speedLevel * (accelPressed ? 10 : 6);
-      roadEl.style.backgroundPositionY = `${roadOffset}px, ${roadOffset}px, 0px`;
+      ceilingEl.style.transform = `translateY(${farShift}px) scale(${1 + farShift * 0.003})`;
+      horizonGlowEl.style.transform = `translateY(${farShift * 1.2}px)`;
+
+      roadOffset += speedLevel * (accelPressed ? 4.5 : 2.8);
+      roadEl.style.backgroundPositionY = `${roadOffset * 0.35}px, ${roadOffset}px, 0px`;
     }
 
     let msgTimeout = null;
@@ -792,14 +825,14 @@
     function spawnObject() {
       if (!running) return;
 
-      const useDanger = speedLevel >= 8 && Math.random() < 0.1;
+      const useDanger = speedLevel >= 8 && Math.random() < 0.08;
       let picked;
       let className;
 
       if (useDanger) {
         picked = { emoji: "🧓", points: -500000, type: "danger" };
         className = "entity danger";
-      } else if (Math.random() < 0.72) {
+      } else if (Math.random() < 0.74) {
         picked = weightedPick(itemTable);
         className = "entity item";
       } else {
@@ -829,7 +862,10 @@
     function placeObject(obj) {
       const x = laneToWorldX(obj.lane, obj.depth);
       const y = ROAD_TOP_Y + (ROAD_BOTTOM_Y - ROAD_TOP_Y) * obj.depth;
-      const scale = 0.45 + obj.depth * 1.4;
+
+      // 奥はゆっくり見えて、手前でグッと来る
+      const eased = Math.pow(obj.depth, 1.45);
+      const scale = 0.42 + eased * 1.7;
       const width = 68 * scale;
       const height = 50 * scale;
 
@@ -837,9 +873,9 @@
       obj.el.style.top = `${y}%`;
       obj.el.style.width = `${width}px`;
       obj.el.style.height = `${height}px`;
-      obj.el.style.fontSize = `${18 + obj.depth * 26}px`;
-      obj.el.style.opacity = `${0.55 + obj.depth * 0.55}`;
-      obj.el.style.filter = `blur(${Math.max(0, (1 - obj.depth) * 1.6)}px)`;
+      obj.el.style.fontSize = `${18 + eased * 28}px`;
+      obj.el.style.opacity = `${0.5 + eased * 0.6}`;
+      obj.el.style.filter = `blur(${Math.max(0, (1 - obj.depth) * 1.8)}px)`;
       obj.el.style.transform = `translate(-50%, -50%) scale(${Math.floor(scale * 10) / 10})`;
     }
 
@@ -873,10 +909,11 @@
       updateEnvironment();
 
       for (const obj of [...objects]) {
-        const baseSpeed = 0.010 + speedLevel * 0.0015 + (accelPressed ? 0.0022 : 0);
+        const accelBonus = accelPressed ? 0.0012 : 0;
+        const baseSpeed = 0.0078 + speedLevel * 0.0011 + accelBonus;
         obj.depth += baseSpeed;
 
-        if (!obj.done && obj.depth >= 0.92) {
+        if (!obj.done && obj.depth >= 0.93) {
           obj.done = true;
 
           if (obj.lane === lane) {
@@ -894,7 +931,7 @@
           continue;
         }
 
-        if (obj.depth > 1.05) {
+        if (obj.depth > 1.06) {
           obj.el.remove();
           objects.delete(obj);
           continue;
@@ -991,8 +1028,8 @@
 
       spawnTimer = setInterval(() => {
         spawnObject();
-        if (speedLevel >= 6 && Math.random() < 0.18) spawnObject();
-      }, 950);
+        if (speedLevel >= 6 && Math.random() < 0.12) spawnObject();
+      }, 1050);
 
       gameTimer = setInterval(() => {
         if (!running) return;
@@ -1010,9 +1047,9 @@
         }
 
         if (accelPressed && speedLevel < 10) {
-          speedLevel = Math.min(10, speedLevel + 0.35);
+          speedLevel = Math.min(10, speedLevel + 0.18);
         } else if (!accelPressed && speedLevel > 1) {
-          speedLevel = Math.max(1, speedLevel - 0.12);
+          speedLevel = Math.max(1, speedLevel - 0.08);
         }
 
         updateUI();
