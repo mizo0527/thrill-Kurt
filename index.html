@@ -1,1069 +1,118 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-  />
-  <title>スリルカート 試作4号改</title>
-  <style>
-    :root {
-      --bg: #111;
-      --text: #fff;
-      --ui-bg: rgba(0, 0, 0, 0.32);
-      --road1: #505050;
-      --road2: #252525;
-      --btn-bg: rgba(235, 235, 235, 0.9);
-      --btn-active: rgba(255, 255, 255, 1);
-      --accel-bg: #37df4b;
-      --danger-yellow: #ffd84a;
-      --danger-dark: #1a1a1a;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スリルカート試作</title>
+<style>
+html,body{
+  margin:0; padding:0; overflow:hidden; background:#000;
+}
+#game{
+  position:relative;
+  width:100vw; height:100vh;
+  overflow:hidden;
+}
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
+/* ===== 背景レイヤー ===== */
+.layer{
+  position:absolute;
+  width:100%; height:200%;
+  background-repeat:repeat-y;
+  background-position:0 0;
+  image-rendering:pixelated;
+}
 
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--text);
-      font-family: sans-serif;
-      touch-action: manipulation;
-    }
+/* 遠景（ほぼ止める） */
+#bgFar{
+  background:url('assets/bg_far.png') no-repeat center top;
+  background-size:cover;
+  z-index:1;
+  filter:blur(1.5px) brightness(0.8);
+}
 
-    #game {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background: linear-gradient(to bottom, #2a2a2a 0%, #171717 100%);
-    }
+/* 棚 */
+#bgShelfL, #bgShelfR{
+  width:30%;
+  background-size:cover;
+  z-index:2;
+  opacity:0.95;
+}
+#bgShelfL{
+  left:0;
+  background:url('assets/bg_shelf_left.png') no-repeat left top;
+}
+#bgShelfR{
+  right:0;
+  background:url('assets/bg_shelf_right.png') no-repeat right top;
+}
 
-    /* ===== 背景 ===== */
-    #scene {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      overflow: hidden;
-    }
+/* 床（主役） */
+#bgFloor{
+  background:url('assets/bg_floor.png') repeat-y center;
+  background-size:cover;
+  z-index:0;
+}
 
-    #horizonGlow {
-      position: absolute;
-      left: 28%;
-      right: 28%;
-      top: 13%;
-      height: 10%;
-      background: radial-gradient(ellipse at center, rgba(255,255,255,0.09), rgba(255,255,255,0));
-      filter: blur(8px);
-      opacity: 0.7;
-    }
-
-    #ceiling {
-      position: absolute;
-      left: 16%;
-      right: 16%;
-      top: 0;
-      height: 18%;
-      opacity: 0.55;
-      background:
-        repeating-linear-gradient(
-          to right,
-          rgba(255,255,255,0.06) 0px,
-          rgba(255,255,255,0.06) 2px,
-          transparent 2px,
-          transparent 60px
-        ),
-        linear-gradient(to bottom, #b7b1a7, #8c857a);
-      clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
-      transform-origin: center top;
-    }
-
-    .shelf {
-      position: absolute;
-      top: 12%;
-      bottom: 0;
-      width: 21%;
-      background:
-        linear-gradient(to bottom, rgba(0,0,0,0.06), rgba(0,0,0,0.18)),
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,0.04) 0px,
-          rgba(255,255,255,0.04) 4px,
-          transparent 4px,
-          transparent 78px
-        ),
-        linear-gradient(to right, #425272, #263247);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-      z-index: 1;
-    }
-
-    #leftShelf {
-      left: 0;
-      clip-path: polygon(0 0, 100% 0, 84% 100%, 0 100%);
-      transform-origin: left center;
-    }
-
-    #rightShelf {
-      right: 0;
-      clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%);
-      transform-origin: right center;
-    }
-
-    .shelf-products {
-      position: absolute;
-      inset: 0;
-      padding: 10px 10px 80px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .row {
-      display: flex;
-      gap: 4px;
-      justify-content: center;
-      align-items: flex-end;
-      height: 62px;
-    }
-
-    .prod {
-      width: 16%;
-      border-radius: 4px;
-      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.18);
-    }
-
-    .p1 { height: 34px; background: #f4d35e; }
-    .p2 { height: 44px; background: #ee964b; }
-    .p3 { height: 38px; background: #f95738; }
-    .p4 { height: 46px; background: #7bd389; }
-    .p5 { height: 40px; background: #6ca0dc; }
-    .p6 { height: 48px; background: #c27cff; }
-
-    #road {
-      position: absolute;
-      left: 21%;
-      right: 21%;
-      top: 0;
-      bottom: 0;
-      background:
-        linear-gradient(to bottom, rgba(255,255,255,0.03), rgba(255,255,255,0)),
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,0.05) 0px,
-          rgba(255,255,255,0.05) 8px,
-          transparent 8px,
-          transparent 40px
-        ),
-        linear-gradient(to bottom, var(--road1), var(--road2));
-      clip-path: polygon(16% 0, 84% 0, 100% 100%, 0 100%);
-      z-index: 2;
-      background-position-y: 0px, 0px, 0px;
-    }
-
-    #roadNearGlow {
-      position: absolute;
-      left: 24%;
-      right: 24%;
-      bottom: 17%;
-      height: 18%;
-      background: radial-gradient(ellipse at center, rgba(255,255,255,0.06), rgba(255,255,255,0));
-      z-index: 3;
-      pointer-events: none;
-    }
-
-    /* ===== UI ===== */
-    #ui {
-      position: absolute;
-      top: max(10px, env(safe-area-inset-top));
-      left: 10px;
-      right: 10px;
-      z-index: 40;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      pointer-events: none;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-    }
-
-    .ui-box {
-      background: var(--ui-bg);
-      border-radius: 18px;
-      padding: 12px 16px;
-      min-width: 150px;
-      backdrop-filter: blur(4px);
-    }
-
-    .ui-title {
-      font-size: 16px;
-      opacity: 0.92;
-      margin-bottom: 2px;
-    }
-
-    .ui-main {
-      font-size: 30px;
-      line-height: 1;
-      font-weight: 900;
-    }
-
-    #timeBarWrap {
-      margin-top: 8px;
-      width: 220px;
-      height: 18px;
-      background: rgba(255,255,255,0.16);
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.12);
-    }
-
-    #timeBar {
-      width: 100%;
-      height: 100%;
-      transform-origin: left center;
-      background: linear-gradient(to right, #45dd59, #ffdf4d, #ff5a4e);
-    }
-
-    #speedWrap {
-      position: absolute;
-      right: 16px;
-      bottom: 138px;
-      z-index: 50;
-      width: 160px;
-      pointer-events: none;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-    }
-
-    #speedLabel {
-      text-align: right;
-      font-size: 14px;
-      margin-bottom: 6px;
-      opacity: 0.9;
-    }
-
-    #speedMeter {
-      height: 18px;
-      background: rgba(255,255,255,0.16);
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.12);
-    }
-
-    #speedFill {
-      width: 16%;
-      height: 100%;
-      background: linear-gradient(to right, #39e04d, #ffe04f, #ff5d50);
-      transition: width 0.12s linear;
-    }
-
-    #speedValue {
-      margin-top: 4px;
-      text-align: right;
-      font-size: 26px;
-      font-weight: bold;
-    }
-
-    /* ===== フィールド ===== */
-    #field {
-      position: absolute;
-      inset: 0;
-      z-index: 5;
-      overflow: hidden;
-    }
-
-    .lane-guide {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 33.3333%;
-      border-left: 1px solid rgba(255,255,255,0.035);
-      pointer-events: none;
-    }
-
-    /* ===== プレイヤー ===== */
-    #player {
-      position: absolute;
-      left: 40%;
-      bottom: 175px;
-      width: 20%;
-      height: 82px;
-      border-radius: 16px;
-      background: rgba(57,224,77,0.18);
-      border: 2px solid rgba(57,224,77,0.75);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 30;
-      box-shadow: 0 10px 18px rgba(0,0,0,0.32);
-      transition: left 0.08s steps(1), transform 0.12s ease;
-    }
-
-    #player.hit {
-      transform: translateY(6px) rotate(-8deg);
-      background: rgba(255,184,71,0.18);
-      border-color: rgba(255,184,71,0.88);
-    }
-
-    .cart-body {
-      font-size: 46px;
-      line-height: 1;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55));
-    }
-
-    /* ===== オブジェクト ===== */
-    .entity {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 64px;
-      height: 48px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      z-index: 12;
-      pointer-events: none;
-      box-shadow: 0 8px 14px rgba(0,0,0,0.24);
-      transform: translate(-50%, -50%) scale(1);
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-    }
-
-    .item {
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.14);
-    }
-
-    .obstacle {
-      background: rgba(255,125,125,0.16);
-      border: 1px solid rgba(255,170,170,0.24);
-    }
-
-    .danger {
-      background: repeating-linear-gradient(
-        -45deg,
-        var(--danger-dark) 0px,
-        var(--danger-dark) 14px,
-        var(--danger-yellow) 14px,
-        var(--danger-yellow) 28px
-      );
-      border: 2px solid #111;
-      color: #111;
-      font-size: 15px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      text-shadow: none;
-    }
-
-    /* ===== テロップ ===== */
-    #message {
-      position: absolute;
-      left: 50%;
-      top: 40%;
-      transform: translate(-50%, -50%);
-      z-index: 60;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      pointer-events: none;
-      text-shadow: 0 4px 8px rgba(0,0,0,0.65);
-    }
-
-    #message.show {
-      opacity: 1;
-    }
-
-    #messageMain {
-      font-size: clamp(28px, 7vw, 56px);
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    #messageSub {
-      margin-top: 8px;
-      font-size: clamp(18px, 3vw, 28px);
-      font-weight: 800;
-    }
-
-    #pickupText {
-      position: absolute;
-      left: 50%;
-      top: 24%;
-      transform: translateX(-50%);
-      z-index: 55;
-      font-size: 28px;
-      font-weight: 900;
-      opacity: 0;
-      pointer-events: none;
-      text-shadow: 0 3px 6px rgba(0,0,0,0.65);
-    }
-
-    #pickupText.show {
-      animation: pickupPop 0.55s ease;
-    }
-
-    @keyframes pickupPop {
-      0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.9); }
-      18% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.06); }
-      100% { opacity: 0; transform: translateX(-50%) translateY(-18px) scale(1); }
-    }
-
-    /* ===== 操作UI ===== */
-    #controls {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      pointer-events: none;
-    }
-
-    #padWrap {
-      position: fixed;
-      left: 18px;
-      bottom: max(74px, env(safe-area-inset-bottom, 12px));
-      width: 164px;
-      height: 164px;
-      z-index: 9999;
-      pointer-events: none;
-    }
-
-    .pad-base {
-      position: absolute;
-      inset: 0;
-      border-radius: 28px;
-      background: rgba(255,255,255,0.08);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.32);
-      backdrop-filter: blur(2px);
-    }
-
-    .pad-btn {
-      position: absolute;
-      border: none;
-      border-radius: 18px;
-      background: var(--btn-bg);
-      color: #111;
-      font-size: 34px;
-      font-weight: 900;
-      box-shadow: 0 6px 14px rgba(0,0,0,0.28);
-      pointer-events: auto;
-      touch-action: manipulation;
-    }
-
-    .pad-btn:active {
-      transform: scale(0.97);
-      background: var(--btn-active);
-    }
-
-    #leftBtn {
-      left: 8px;
-      top: 42px;
-      width: 68px;
-      height: 80px;
-    }
-
-    #rightBtn {
-      right: 8px;
-      top: 42px;
-      width: 68px;
-      height: 80px;
-    }
-
-    #accelBtn {
-      position: fixed;
-      right: 18px;
-      bottom: max(88px, env(safe-area-inset-bottom, 12px));
-      width: 148px;
-      height: 108px;
-      border: none;
-      border-radius: 26px;
-      background: var(--accel-bg);
-      color: #111;
-      font-size: 28px;
-      font-weight: 900;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.34);
-      pointer-events: auto;
-      touch-action: manipulation;
-      z-index: 9999;
-    }
-
-    #accelBtn:active {
-      transform: scale(0.97);
-    }
-
-    /* ===== リザルト ===== */
-    #resultOverlay {
-      position: absolute;
-      inset: 0;
-      z-index: 200;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.82);
-      padding: 24px;
-    }
-
-    #resultCard {
-      width: min(92vw, 560px);
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 24px;
-      padding: 24px;
-      text-align: center;
-      box-shadow: 0 14px 26px rgba(0,0,0,0.34);
-    }
-
-    #resultTitle {
-      font-size: clamp(28px, 6vw, 44px);
-      font-weight: 900;
-      margin-bottom: 12px;
-    }
-
-    #resultScore {
-      font-size: clamp(22px, 4vw, 34px);
-      font-weight: 900;
-      margin-bottom: 10px;
-    }
-
-    #resultRank {
-      font-size: clamp(18px, 3vw, 28px);
-      margin-bottom: 16px;
-      line-height: 1.4;
-    }
-
-    #couponText {
-      font-size: clamp(18px, 3vw, 26px);
-      color: #ffe04f;
-      font-weight: bold;
-      margin-bottom: 18px;
-    }
-
-    #retryBtn {
-      border: none;
-      border-radius: 16px;
-      background: #fff;
-      color: #111;
-      font-size: 20px;
-      font-weight: 900;
-      padding: 14px 26px;
-    }
-
-    @media (max-width: 900px) {
-      .shelf { width: 19%; }
-      #road { left: 19%; right: 19%; }
-      #player { bottom: 168px; }
-      #padWrap { width: 150px; height: 150px; }
-      #accelBtn { width: 138px; height: 100px; }
-    }
-  </style>
+/* ===== UI ===== */
+#stick{
+  position:absolute;
+  left:20px; bottom:20px;
+  width:120px;
+  z-index:5;
+}
+#btn{
+  position:absolute;
+  right:20px; bottom:20px;
+  width:100px;
+  z-index:5;
+}
+</style>
 </head>
 <body>
-  <div id="game">
-    <div id="scene">
-      <div id="horizonGlow"></div>
-      <div id="ceiling"></div>
 
-      <div id="leftShelf" class="shelf">
-        <div class="shelf-products">
-          <div class="row"><div class="prod p1"></div><div class="prod p3"></div><div class="prod p2"></div><div class="prod p5"></div><div class="prod p4"></div></div>
-          <div class="row"><div class="prod p6"></div><div class="prod p1"></div><div class="prod p3"></div><div class="prod p4"></div><div class="prod p2"></div></div>
-          <div class="row"><div class="prod p2"></div><div class="prod p5"></div><div class="prod p1"></div><div class="prod p6"></div><div class="prod p3"></div></div>
-          <div class="row"><div class="prod p4"></div><div class="prod p1"></div><div class="prod p5"></div><div class="prod p2"></div><div class="prod p3"></div></div>
-          <div class="row"><div class="prod p6"></div><div class="prod p2"></div><div class="prod p4"></div><div class="prod p5"></div><div class="prod p1"></div></div>
-        </div>
-      </div>
+<div id="game">
+  <div id="bgFloor" class="layer"></div>
+  <div id="bgFar" class="layer"></div>
+  <div id="bgShelfL" class="layer"></div>
+  <div id="bgShelfR" class="layer"></div>
+
+  <img id="stick" src="assets/joystick.png">
+  <img id="btn" src="assets/red_button.png">
+</div>
+
+<script>
+let floorY = 0;
+let shelfY = 0;
+let farY = 0;
+
+let speed = 2;
+let accel = false;
+
+/* ===== 加速ボタン ===== */
+const btn = document.getElementById("btn");
+btn.addEventListener("touchstart",()=>accel=true);
+btn.addEventListener("touchend",()=>accel=false);
+btn.addEventListener("mousedown",()=>accel=true);
+btn.addEventListener("mouseup",()=>accel=false);
+
+/* ===== ループ ===== */
+function loop(){
+  let boost = accel ? 6 : 0;
+
+  floorY += speed + boost;
+  shelfY += (speed + boost)*0.5;
+  farY += (speed + boost)*0.1;
+
+  document.getElementById("bgFloor").style.backgroundPosition = `0 ${floorY}px`;
+  document.getElementById("bgShelfL").style.backgroundPosition = `0 ${shelfY}px`;
+  document.getElementById("bgShelfR").style.backgroundPosition = `0 ${shelfY}px`;
+  document.getElementById("bgFar").style.backgroundPosition = `0 ${farY}px`;
+
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
 
-      <div id="rightShelf" class="shelf">
-        <div class="shelf-products">
-          <div class="row"><div class="prod p4"></div><div class="prod p2"></div><div class="prod p1"></div><div class="prod p5"></div><div class="prod p3"></div></div>
-          <div class="row"><div class="prod p1"></div><div class="prod p3"></div><div class="prod p5"></div><div class="prod p6"></div><div class="prod p2"></div></div>
-          <div class="row"><div class="prod p3"></div><div class="prod p4"></div><div class="prod p2"></div><div class="prod p1"></div><div class="prod p6"></div></div>
-          <div class="row"><div class="prod p2"></div><div class="prod p6"></div><div class="prod p1"></div><div class="prod p4"></div><div class="prod p5"></div></div>
-          <div class="row"><div class="prod p5"></div><div class="prod p2"></div><div class="prod p4"></div><div class="prod p1"></div><div class="prod p3"></div></div>
-        </div>
-      </div>
-
-      <div id="road"></div>
-      <div id="roadNearGlow"></div>
-    </div>
-
-    <div id="ui">
-      <div class="ui-box">
-        <div class="ui-title">SCORE</div>
-        <div id="score" class="ui-main">0</div>
-      </div>
-
-      <div class="ui-box" style="text-align:right;">
-        <div class="ui-title">TIME GAUGE</div>
-        <div id="timeValue" class="ui-main">60</div>
-        <div id="timeBarWrap">
-          <div id="timeBar"></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="speedWrap">
-      <div id="speedLabel">SPEEDOMETER</div>
-      <div id="speedMeter"><div id="speedFill"></div></div>
-      <div id="speedValue">1</div>
-    </div>
-
-    <div id="field">
-      <div class="lane-guide" style="left:0%;"></div>
-      <div class="lane-guide" style="left:33.3333%;"></div>
-      <div class="lane-guide" style="left:66.6666%;"></div>
-
-      <div id="player">
-        <span class="cart-body">🛒</span>
-      </div>
-    </div>
-
-    <div id="pickupText"></div>
-
-    <div id="message">
-      <div id="messageMain"></div>
-      <div id="messageSub"></div>
-    </div>
-
-    <div id="controls">
-      <div id="padWrap">
-        <div class="pad-base"></div>
-        <button id="leftBtn" class="pad-btn" aria-label="左へ移動">←</button>
-        <button id="rightBtn" class="pad-btn" aria-label="右へ移動">→</button>
-      </div>
-
-      <button id="accelBtn" aria-label="加速">加速</button>
-    </div>
-
-    <div id="resultOverlay">
-      <div id="resultCard">
-        <div id="resultTitle">買い物終了ッ！！</div>
-        <div id="resultScore">スコア: 0</div>
-        <div id="resultRank">あなたの腕前は「こどもおつかい」レベル</div>
-        <div id="couponText">靴下・パンスト・レギンス 10%OFF</div>
-        <button id="retryBtn">もう一回やる</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const LANES = 3;
-    const START_TIME = 60;
-    const ROAD_TOP_Y = 18;
-    const ROAD_BOTTOM_Y = 78;
-    const ROAD_LEFT_TOP = 35;
-    const ROAD_RIGHT_TOP = 65;
-    const ROAD_LEFT_BOTTOM = 22;
-    const ROAD_RIGHT_BOTTOM = 78;
-
-    const scoreEl = document.getElementById("score");
-    const timeValueEl = document.getElementById("timeValue");
-    const timeBarEl = document.getElementById("timeBar");
-    const speedFillEl = document.getElementById("speedFill");
-    const speedValueEl = document.getElementById("speedValue");
-    const roadEl = document.getElementById("road");
-    const playerEl = document.getElementById("player");
-    const leftBtn = document.getElementById("leftBtn");
-    const rightBtn = document.getElementById("rightBtn");
-    const accelBtn = document.getElementById("accelBtn");
-    const fieldEl = document.getElementById("field");
-    const messageEl = document.getElementById("message");
-    const messageMainEl = document.getElementById("messageMain");
-    const messageSubEl = document.getElementById("messageSub");
-    const pickupTextEl = document.getElementById("pickupText");
-    const resultOverlayEl = document.getElementById("resultOverlay");
-    const resultScoreEl = document.getElementById("resultScore");
-    const resultRankEl = document.getElementById("resultRank");
-    const retryBtn = document.getElementById("retryBtn");
-    const leftShelfEl = document.getElementById("leftShelf");
-    const rightShelfEl = document.getElementById("rightShelf");
-    const ceilingEl = document.getElementById("ceiling");
-    const horizonGlowEl = document.getElementById("horizonGlow");
-
-    const obaLight = new Audio("audio_24429_sample.mp3");
-    const obaHeavy = new Audio("audio_24440_sample.mp3");
-    obaLight.preload = "auto";
-    obaHeavy.preload = "auto";
-
-    let lane = 1;
-    let score = 0;
-    let timeLeft = START_TIME;
-    let speedLevel = 1;
-    let accelPressed = false;
-    let running = true;
-    let hitLock = false;
-    let spawnTimer = null;
-    let gameTimer = null;
-    let animationFrame = null;
-    let roadOffset = 0;
-    const objects = new Set();
-
-    const itemTable = [
-      { emoji: "🥕", points: 1500, weight: 34, type: "item" },
-      { emoji: "🐟", points: 2000, weight: 28, type: "item" },
-      { emoji: "🥔", points: 3000, weight: 18, type: "item" },
-      { emoji: "🍞", points: 4000, weight: 12, type: "item" },
-      { emoji: "🥩", points: 5000, weight: 8, type: "item" }
-    ];
-
-    function weightedPick(list) {
-      const total = list.reduce((sum, item) => sum + item.weight, 0);
-      let r = Math.random() * total;
-      for (const item of list) {
-        r -= item.weight;
-        if (r <= 0) return item;
-      }
-      return list[list.length - 1];
-    }
-
-    function laneToWorldX(laneIndex, depth) {
-      const left = ROAD_LEFT_TOP + (ROAD_LEFT_BOTTOM - ROAD_LEFT_TOP) * depth;
-      const right = ROAD_RIGHT_TOP + (ROAD_RIGHT_BOTTOM - ROAD_RIGHT_TOP) * depth;
-      const laneWidth = (right - left) / LANES;
-      return left + laneWidth * (laneIndex + 0.5);
-    }
-
-    function setPlayerLane() {
-      const x = laneToWorldX(lane, 1);
-      playerEl.style.left = `calc(${x}% - 10%)`;
-    }
-
-    function setPlayerTilt(direction) {
-      if (direction === "left") {
-        playerEl.style.transform = "rotate(-8deg)";
-      } else if (direction === "right") {
-        playerEl.style.transform = "rotate(8deg)";
-      } else {
-        playerEl.style.transform = "rotate(0deg)";
-      }
-    }
-
-    function updateUI() {
-      scoreEl.textContent = score.toLocaleString();
-      timeValueEl.textContent = Math.max(0, Math.ceil(timeLeft)).toString();
-      timeBarEl.style.transform = `scaleX(${Math.max(0, timeLeft) / START_TIME})`;
-      speedFillEl.style.width = `${12 + Math.min(88, speedLevel * 11)}%`;
-      speedValueEl.textContent = String(Math.round(speedLevel));
-    }
-
-    function updateEnvironment() {
-      const accelBonus = accelPressed ? 1.5 : 0;
-      const shelfShift = Math.min(10, speedLevel * 0.65 + accelBonus);
-      const farShift = Math.min(4, speedLevel * 0.18 + accelBonus * 0.2);
-
-      leftShelfEl.style.transform = `translateX(${-shelfShift}px)`;
-      rightShelfEl.style.transform = `translateX(${shelfShift}px)`;
-
-      ceilingEl.style.transform = `translateY(${farShift}px) scale(${1 + farShift * 0.003})`;
-      horizonGlowEl.style.transform = `translateY(${farShift * 1.2}px)`;
-
-      roadOffset += speedLevel * (accelPressed ? 4.5 : 2.8);
-      roadEl.style.backgroundPositionY = `${roadOffset * 0.35}px, ${roadOffset}px, 0px`;
-    }
-
-    let msgTimeout = null;
-    function showMessage(main, sub = "", duration = 700) {
-      messageMainEl.textContent = main;
-      messageSubEl.textContent = sub;
-      messageEl.classList.add("show");
-      clearTimeout(msgTimeout);
-      msgTimeout = setTimeout(() => {
-        messageEl.classList.remove("show");
-      }, duration);
-    }
-
-    function showPickup(text, color = "#ffe35a") {
-      pickupTextEl.textContent = text;
-      pickupTextEl.style.color = color;
-      pickupTextEl.classList.remove("show");
-      void pickupTextEl.offsetWidth;
-      pickupTextEl.classList.add("show");
-    }
-
-    function getRankText(scoreValue) {
-      if (scoreValue >= 50000) return "あなたの腕前は「真・買い物上手の総大将」レベル";
-      if (scoreValue >= 30000) return "あなたの腕前は「無尽蔵の買い物マイスター」レベル";
-      if (scoreValue >= 20000) return "あなたの腕前は「時代を担う買い物上手」レベル";
-      if (scoreValue >= 10000) return "あなたの腕前は「神速カスタマー」レベル";
-      if (scoreValue >= 5000) return "あなたの腕前は「努力の天才」レベル";
-      return "あなたの腕前は「こどもおつかい」レベル";
-    }
-
-    function playVoice(kind) {
-      try {
-        if (kind === "danger") {
-          obaHeavy.currentTime = 0;
-          setTimeout(() => obaHeavy.play().catch(() => {}), 220);
-        } else {
-          obaLight.currentTime = 0;
-          setTimeout(() => obaLight.play().catch(() => {}), 180);
-        }
-      } catch (e) {}
-    }
-
-    function endGame() {
-      if (!running) return;
-      running = false;
-
-      clearInterval(spawnTimer);
-      clearInterval(gameTimer);
-      cancelAnimationFrame(animationFrame);
-
-      showMessage("買い物終了ッ！！", "", 900);
-
-      setTimeout(() => {
-        resultScoreEl.textContent = `スコア: ${score.toLocaleString()}`;
-        resultRankEl.textContent = getRankText(score);
-        resultOverlayEl.style.display = "flex";
-      }, 500);
-    }
-
-    function spawnObject() {
-      if (!running) return;
-
-      const useDanger = speedLevel >= 8 && Math.random() < 0.08;
-      let picked;
-      let className;
-
-      if (useDanger) {
-        picked = { emoji: "🧓", points: -500000, type: "danger" };
-        className = "entity danger";
-      } else if (Math.random() < 0.74) {
-        picked = weightedPick(itemTable);
-        className = "entity item";
-      } else {
-        picked = { emoji: "🧓", points: -50000, type: "obstacle" };
-        className = "entity obstacle";
-      }
-
-      const laneIndex = Math.floor(Math.random() * LANES);
-      const el = document.createElement("div");
-      el.className = className;
-      el.textContent = picked.type === "danger" ? "DANGER" : picked.emoji;
-      fieldEl.appendChild(el);
-
-      const obj = {
-        el,
-        lane: laneIndex,
-        type: picked.type,
-        points: picked.points,
-        depth: 0,
-        done: false
-      };
-
-      objects.add(obj);
-      placeObject(obj);
-    }
-
-    function placeObject(obj) {
-      const x = laneToWorldX(obj.lane, obj.depth);
-      const y = ROAD_TOP_Y + (ROAD_BOTTOM_Y - ROAD_TOP_Y) * obj.depth;
-
-      // 奥はゆっくり見えて、手前でグッと来る
-      const eased = Math.pow(obj.depth, 1.45);
-      const scale = 0.42 + eased * 1.7;
-      const width = 68 * scale;
-      const height = 50 * scale;
-
-      obj.el.style.left = `${x}%`;
-      obj.el.style.top = `${y}%`;
-      obj.el.style.width = `${width}px`;
-      obj.el.style.height = `${height}px`;
-      obj.el.style.fontSize = `${18 + eased * 28}px`;
-      obj.el.style.opacity = `${0.5 + eased * 0.6}`;
-      obj.el.style.filter = `blur(${Math.max(0, (1 - obj.depth) * 1.8)}px)`;
-      obj.el.style.transform = `translate(-50%, -50%) scale(${Math.floor(scale * 10) / 10})`;
-    }
-
-    function triggerHit(type, points) {
-      if (hitLock) return;
-
-      hitLock = true;
-      playerEl.classList.add("hit");
-      score += points;
-
-      if (type === "danger") {
-        showMessage("重大事故発生！", "年寄りを労わらんか！", 1200);
-        playVoice("danger");
-      } else {
-        showMessage("フロア事故発生！", "あれまあ～", 900);
-        playVoice("normal");
-      }
-
-      updateUI();
-
-      setTimeout(() => {
-        playerEl.classList.remove("hit");
-        hitLock = false;
-        setPlayerTilt(null);
-      }, type === "danger" ? 900 : 600);
-    }
-
-    function gameLoop() {
-      if (!running) return;
-
-      updateEnvironment();
-
-      for (const obj of [...objects]) {
-        const accelBonus = accelPressed ? 0.0012 : 0;
-        const baseSpeed = 0.0078 + speedLevel * 0.0011 + accelBonus;
-        obj.depth += baseSpeed;
-
-        if (!obj.done && obj.depth >= 0.93) {
-          obj.done = true;
-
-          if (obj.lane === lane) {
-            if (obj.type === "item") {
-              score += obj.points;
-              showPickup(`+${obj.points.toLocaleString()}`, "#ffe35a");
-              updateUI();
-            } else {
-              triggerHit(obj.type, obj.points);
-            }
-          }
-
-          obj.el.remove();
-          objects.delete(obj);
-          continue;
-        }
-
-        if (obj.depth > 1.06) {
-          obj.el.remove();
-          objects.delete(obj);
-          continue;
-        }
-
-        placeObject(obj);
-      }
-
-      animationFrame = requestAnimationFrame(gameLoop);
-    }
-
-    function moveLeft() {
-      if (!running) return;
-      lane = Math.max(0, lane - 1);
-      setPlayerLane();
-      setPlayerTilt("left");
-      setTimeout(() => {
-        if (!hitLock) setPlayerTilt(null);
-      }, 120);
-    }
-
-    function moveRight() {
-      if (!running) return;
-      lane = Math.min(LANES - 1, lane + 1);
-      setPlayerLane();
-      setPlayerTilt("right");
-      setTimeout(() => {
-        if (!hitLock) setPlayerTilt(null);
-      }, 120);
-    }
-
-    function bindTap(button, onDown, onUp = null) {
-      const start = (e) => {
-        e.preventDefault();
-        onDown();
-      };
-      const end = (e) => {
-        e.preventDefault();
-        if (onUp) onUp();
-      };
-
-      button.addEventListener("pointerdown", start, { passive: false });
-      button.addEventListener("pointerup", end, { passive: false });
-      button.addEventListener("pointercancel", end, { passive: false });
-      button.addEventListener("pointerleave", end, { passive: false });
-    }
-
-    bindTap(leftBtn, moveLeft);
-    bindTap(rightBtn, moveRight);
-    bindTap(
-      accelBtn,
-      () => { accelPressed = true; },
-      () => { accelPressed = false; }
-    );
-
-    window.addEventListener("keydown", (e) => {
-      if (!running) return;
-      if (e.key === "ArrowLeft") moveLeft();
-      if (e.key === "ArrowRight") moveRight();
-      if (e.key === " " || e.key === "ArrowUp") accelPressed = true;
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (e.key === " " || e.key === "ArrowUp") accelPressed = false;
-    });
-
-    function startGame() {
-      lane = 1;
-      score = 0;
-      timeLeft = START_TIME;
-      speedLevel = 1;
-      accelPressed = false;
-      running = true;
-      hitLock = false;
-      roadOffset = 0;
-
-      resultOverlayEl.style.display = "none";
-
-      for (const obj of objects) {
-        obj.el.remove();
-      }
-      objects.clear();
-
-      clearInterval(spawnTimer);
-      clearInterval(gameTimer);
-      cancelAnimationFrame(animationFrame);
-
-      setPlayerLane();
-      setPlayerTilt(null);
-      updateUI();
-      updateEnvironment();
-
-      showMessage("スリルカート、開店ッ！！", "", 900);
-
-      spawnTimer = setInterval(() => {
-        spawnObject();
-        if (speedLevel >= 6 && Math.random() < 0.12) spawnObject();
-      }, 1050);
-
-      gameTimer = setInterval(() => {
-        if (!running) return;
-
-        timeLeft -= 1;
-        if (timeLeft <= 0) {
-          timeLeft = 0;
-          updateUI();
-          endGame();
-          return;
-        }
-
-        if (timeLeft % 10 === 0 && speedLevel < 10) {
-          speedLevel += 1;
-        }
-
-        if (accelPressed && speedLevel < 10) {
-          speedLevel = Math.min(10, speedLevel + 0.18);
-        } else if (!accelPressed && speedLevel > 1) {
-          speedLevel = Math.max(1, speedLevel - 0.08);
-        }
-
-        updateUI();
-      }, 1000);
-
-      animationFrame = requestAnimationFrame(gameLoop);
-    }
-
-    retryBtn.addEventListener("click", startGame);
-
-    setPlayerLane();
-    updateUI();
-    updateEnvironment();
-    startGame();
-  </script>
 </body>
 </html>
